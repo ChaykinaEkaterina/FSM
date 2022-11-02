@@ -1,0 +1,15 @@
+q0,a=q1
+q0,a=q2
+q2,k=q6
+q2,b=q3
+q0,a=q3
+q1,c=q2
+q1,l=q6
+q1,l=q4
+q3,c=q6
+q4,h=q5
+q4,f=q4
+q5,z=f0
+q6,m=f0
+q2,b=q1
+q3,c=q2
