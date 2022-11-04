@@ -2,5 +2,5 @@ q0,a=q1
 q0,b=q2
 q1,b=q4
 q2,c=f0
-q2,a=q2
+q2,a=q4
 q4,c=f0
