@@ -41,11 +41,13 @@ public class FSM {
 					return null;
 				}
 				
-				if ( line.substring(line.indexOf(',')+1, line.indexOf('=')).length() != 1) {
+				if ( line.substring(line.indexOf(',')+1, line.indexOf('=')).length() != 1 && line.substring(line.indexOf(',')+1, line.indexOf('=')).length() != 0) {
 					System.out.println("Transition symbol must be a single character");
 					return null;
 				}
-				sym = line.substring(line.indexOf(',')+1, line.indexOf('=')).charAt(0);
+				
+				if (line.substring(line.indexOf(',')+1, line.indexOf('=')).length() == 0) sym = Character.MIN_VALUE;
+				else sym = line.substring(line.indexOf(',')+1, line.indexOf('=')).charAt(0);
 				
 				if (line.charAt(line.indexOf('=')+1) != 'q' && line.charAt(line.indexOf('=')+1) != 'f') {
 					System.out.println("Next state must start with q or f");
@@ -138,6 +140,7 @@ public class FSM {
                 	}
                 else {
                 	System.out.println("Cannot process the line");
+                	machine.close();
                 	return;
                 }
             }
@@ -178,6 +181,7 @@ public class FSM {
             for (int i = 0 ; i < line.length(); i++) {
             	if (!alphabet.contains(line.charAt(i))) {
             		System.out.println("Incorrect transition symbol: "+ line.charAt(i));
+            		message.close();
             		return;
             	}
             }
