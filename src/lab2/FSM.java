@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -12,22 +13,22 @@ import java.util.Set;
 
 public class FSM {
 	/*
-	 * TODO: 
-	 * 2. fix transitions search in hasHangs function
+	 * TODO: 2. fix transitions search in hasHangs function 
 	 * 3. fix transitions search in checkLine function
 	 * 4. determinized to non-determinized function 
 	 * 5. apply OOP stuff
 	 */
-
+	
 	public static Transition checkTransition(String line) {
 		if (!line.isEmpty()) {
 			if (line.charAt(0) == 'q') {
-				
-				//System.out.println(line);
+
+				// System.out.println(line);
 				if (line.indexOf(',') == -1) {
 					System.out.println("Missing comma sign");
 					return null;
 				}
+				
 
 				int cur = 0;
 				char sym = ' ';
@@ -40,12 +41,11 @@ public class FSM {
 					System.out.println("State number should be integer");
 					return null;
 				}
-				
-				if (line.charAt(line.indexOf(',')+2) != '=') {
+
+				if (line.charAt(line.indexOf(',') + 2) != '=') {
 					System.out.println("Missing equal sign");
 					return null;
 				}
-
 
 				sym = line.substring(line.indexOf(',') + 1, line.indexOf(',') + 2).charAt(0);
 
@@ -84,7 +84,7 @@ public class FSM {
 		}
 	}
 
-	public static boolean isDeterminized(List<Transition> transitions) {
+	public static boolean isDeterministic(List<Transition> transitions) {
 		for (int i = 1; i < transitions.size(); i++) {
 			if (transitions.get(i - 1).current == transitions.get(i).current
 					&& transitions.get(i - 1).symbol == transitions.get(i).symbol)
@@ -93,19 +93,16 @@ public class FSM {
 		return true;
 	}
 
-	public static boolean hasHangs(List<Transition> transitions) {
+	public static boolean hasHangs(List<Transition> transitions, List<Integer> initialStates) {
 
 		for (int i = 0; i < transitions.size(); i++) {
 			if (!transitions.get(i).isFinal) {
 				boolean connected = false;
-
-				//TODO: fix transition search 
-				for (int j = 0; j < transitions.size(); j++) {
-					if (transitions.get(i).next == transitions.get(i).current) {
-						connected = true;
-						break;
-					}
-				}
+				
+				if (initialStates.contains(transitions.get(i).next)) 
+					connected = true;
+				
+				//System.out.println(transitions.get(i).current+""+ transitions.get(i).symbol+""+transitions.get(i).next+" "+initialStates.contains(transitions.get(i).next));
 
 				if (!connected)
 					return true;
@@ -122,7 +119,6 @@ public class FSM {
 		for (int i = 0; i < line.length(); i++) {
 			int index = -1;
 
-			// TODO: fix transition search
 			for (int j = 0; j < transitions.size(); j++)
 				if (transitions.get(j).current == currentState && transitions.get(j).symbol == line.charAt(i)) {
 					index = j;
@@ -137,22 +133,65 @@ public class FSM {
 		}
 		return false;
 	}
+	
+	public static Set<Integer> findNext(List<Integer> current, char a, List<Transition> transitions, List<Integer> initialStates){
+		Set <Integer> next = new HashSet<Integer>();
+		
+		for (int i =0; i< current.size(); i++) {
+			int start = initialStates.indexOf(current.get(i));
+			while (transitions.get(start).current == current.get(i)) {
+				if (transitions.get(start).symbol == a)
+					{
+					next.add(transitions.get(start).next);
+					}
+			start++;			
+			}
+			//System.out.println(next);
+		}
+		return next;
+	}
+	
+	public static List<Transition> Determinize(List<Integer> current, List<Transition> transitions, List<Integer> initialStates, Set<Character> alphabet) {
+		//List <Integer> current = new ArrayList<>();
+		//current.add(0);
+		List<Transition> newTransitions = new ArrayList<>();
+		boolean isAddedNew = true;
+		List<Integer> newNext = new ArrayList<>();
+		
+		//while (isAddedNew) {
+			
+			for (int i = 0; i < alphabet.size(); i++) {
+				if (!current.containsAll(findNext(current, (char) alphabet.toArray()[i], transitions, initialStates)))
+				current.addAll(findNext(current, (char) alphabet.toArray()[i], transitions, initialStates));
+				//if (!newNextString.isEmpty()) newTransitions.add(new Transition(transitions.get(index).current, transitions.get(index).symbol, isFinal, Integer.parseInt(newNextString)));
+				System.out.println(current);
+				if (current.size()!=0) Determinize(current,transitions,initialStates,alphabet);
+			}
+			
+			//System.out.println(current);
+		//}
+		return newTransitions;
+	}
 
 	public static void main(String[] args) {
-		File file = new File("example.txt");
+		File file = new File("test2.txt");
 		List<Transition> transitions = new ArrayList<>();
 
 		Set<Character> alphabet = new HashSet<Character>();
+		List<Integer> initialStates = new ArrayList<Integer>();
+		List<Integer> nextStates = new ArrayList<Integer>();
 
 		try {
 			BufferedReader machine = new BufferedReader(new FileReader(file));
 			String line;
 			while ((line = machine.readLine()) != null) {
-				//System.out.println(line);
+				// System.out.println(line);
 				Transition tempTransition = checkTransition(line);
 				if (tempTransition != null) {
 					transitions.add(tempTransition);
 					alphabet.add(tempTransition.symbol);
+					initialStates.add(tempTransition.current);
+					nextStates.add(tempTransition.next);
 				} else {
 					System.out.println("Cannot process the line");
 					machine.close();
@@ -165,13 +204,6 @@ public class FSM {
 				System.out.println("Automat is empty");
 				return;
 			}
-
-			//System.out.println("Transitions from file");
-			//for (int i = 0; i < transitions.size(); i++)
-			//	System.out
-			//			.println("" + transitions.get(i).current + transitions.get(i).symbol + transitions.get(i).next);
-
-			//System.out.println();
 
 			List<Transition> sortedTransitions = new ArrayList<>(transitions);
 			sortedTransitions.sort(new Comparator<Transition>() {
@@ -200,12 +232,12 @@ public class FSM {
 			System.out.println("Success: all symbols in given message are valid");
 			message.close();
 
-			if (isDeterminized(sortedTransitions))
+			if (isDeterministic(sortedTransitions))
 				System.out.println("Automat is determinized");
 			else
 				System.out.println("Automat is not determinized");
 
-			if (hasHangs(sortedTransitions))
+			if (!hasHangs(sortedTransitions, initialStates))
 				System.out.println("Automat has no hangs");
 			else
 				System.out.println("Automat has hangs");
@@ -214,7 +246,16 @@ public class FSM {
 				System.out.println("Line can be processed");
 			else
 				System.out.println("Failed processing the line");
-
+			
+			//List <Integer> current = new ArrayList<>();
+			//current.add(0);
+			
+			//List<Transition> newTransitions = Determinize(current, sortedTransitions, initialStates, alphabet);
+			//for (int i = 0; i < newTransitions.size(); i++) {
+			//	System.out.println("" + newTransitions.get(i).current + newTransitions.get(i).symbol
+			//			+ newTransitions.get(i).next);
+				
+			//}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
